@@ -43,7 +43,7 @@ BOARD_HAS_LARGE_FILESYSTEM := true
 
 # Kernel
 BOARD_KERNEL_BASE := 0x00000000
-BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8
+BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8 androidboot.selinux=permissive
 BOARD_KERNEL_PAGESIZE := 2048
 TARGET_PREBUILT_KERNEL := device/lenovo/a1000/prebuilt/zImage
 BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt device/lenovo/a1000/prebuilt/dtb
@@ -55,6 +55,9 @@ TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/brightness
 TARGET_RECOVERY_FSTAB := device/lenovo/a1000/twrp.fstab
 TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone1/temp
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+TW_EXCLUDE_SUPERSU := true
+TW_EXCLUDE_TWRPAPP := true
+TW_NO_EXFAT_FUSE := true
 TW_DEVICE_VERSION := 0_notnoelchannel
 TW_THEME := portrait_mdpi
 RECOVERY_SDCARD_ON_DATA := true
