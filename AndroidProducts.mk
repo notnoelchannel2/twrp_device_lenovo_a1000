@@ -18,4 +18,4 @@
 #
 
 PRODUCT_MAKEFILES := \
-	$(LOCAL_DIR)/omni_grandprimeve3g.mk
+	$(LOCAL_DIR)/omni_a1000.mk

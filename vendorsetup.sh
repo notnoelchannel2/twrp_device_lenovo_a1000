@@ -18,6 +18,6 @@
 # In particular, you can add lunch options with the add_lunch_combo
 # function: add_lunch_combo generic-eng
 
-for i in eng user userdebug; do
-add_lunch_combo omni_grandprimeve3g-${i};
+for i in eng user; do
+add_lunch_combo omni_a1000-${i};
 done
