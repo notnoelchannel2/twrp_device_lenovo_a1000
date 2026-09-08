@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v7
@@ -53,8 +53,6 @@ jobs:
         cd ~/TWRP
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        export HOST_GLOBAL_CFLAGS="$HOST_GLOBAL_CFLAGS -fcommon"
-        export HOST_GLOBAL_CONLYFLAGS="$HOST_GLOBAL_CONLYFLAGS -fcommon"
         export LC_ALL=C
         lunch omni_a1000-eng
         make -j$(nproc --all) recoveryimage
