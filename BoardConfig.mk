@@ -24,6 +24,10 @@ ARCH_ARM_HAVE_TLS_REGISTER := true
 TARGET_BOOTLOADER_BOARD_NAME := SC7731
 TARGET_GLOBAL_CFLAGS += -mtune=cortex-a7 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a7 -mfpu=neon -mfloat-abi=softfp
+# Workaround for GCC 10+ -fno-common breaking legacy AOSP host builds
+# (multiple definition of te_assertions in external/checkpolicy)
+HOST_GLOBAL_CFLAGS += -fcommon
+HOST_GLOBAL_CONLYFLAGS += -fcommon
 
 # Config u-boot
 TARGET_NO_BOOTLOADER := true
