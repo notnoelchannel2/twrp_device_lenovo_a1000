@@ -1,65 +1,96 @@
 name: TWRP CI for Lenovo a1000
+
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v7
-    - name: Installing JDK 7 + Build Dependencies
-      run: |
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo add-apt-repository universe
-        sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex axel g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick protobuf-compiler python3-protobuf lib32readline-dev lib32z1-dev libdw-dev libelf-dev lz4 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
-        wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2_amd64.deb && sudo dpkg -i libtinfo5_6.3-2_amd64.deb && rm -f libtinfo5_6.3-2_amd64.deb
-        wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2_amd64.deb && sudo dpkg -i libncurses5_6.3-2_amd64.deb && rm -f libncurses5_6.3-2_amd64.deb
-        cd /usr/local/src
-        sudo wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
-        sudo tar xvf Python-2.7.18.tgz
-        cd Python-2.7.18
-        sudo ./configure --enable-optimizations
-        sudo make altinstall
-        sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python2
-        sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python
-    - name: Install OpenJDK
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '8'
-    - name: Syncing TWRP sources
-      run: |
-        mkdir ~/TWRP
-        cd ~/TWRP
-        mkdir ~/.bin
-        curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-        python3 ~/.bin/repo init --depth=1 -u https://github.com/a1000-lineageos/platform_manifest_twrp_omni.git -b twrp-5.1
-        git clone --branch twrp-5.1 --single-branch https://github.com/notnoelchannel2/twrp_device_lenovo_a1000.git ~/TWRP/device/lenovo/a1000
-        python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
-    - name: Building TWRP
-      run: |
-        cd ~/TWRP
-        wget https://ftp.gnu.org/gnu/make/make-4.2.tar.gz
-        tar xzf make-4.2.tar.gz && cd make-4.2
-        ./configure --program-prefix=twrp- --prefix=/opt/make42
-        make && sudo make install
-        export PATH="/opt/make42/bin:$PATH"
-        make -v
-        cd ~/TWRP
-        source build/envsetup.sh
-        export ALLOW_MISSING_DEPENDENCIES=true
-        export LC_ALL=C
-        lunch omni_a1000-eng
-        make -j$(nproc --all) recoveryimage
-        export PATH=$OLDPATH
-        export JAVA_HOME=$OLDJAVAHOME
-    - name: Uploading TWRP builds
-      uses: actions/upload-artifact@v6
-      with:
-        name: twrp
-        path: /home/runner/TWRP/out/target/product/a1000/recovery.*
+      - uses: actions/checkout@v7
+
+      - name: Installing JDK 7 + Build Dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex axel g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick protobuf-compiler python3-protobuf lib32readline-dev lib32z1-dev libdw-dev libelf-dev lz4 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+          wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2_amd64.deb && sudo dpkg -i libtinfo5_6.3-2_amd64.deb && rm -f libtinfo5_6.3-2_amd64.deb
+          wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2_amd64.deb && sudo dpkg -i libncurses5_6.3-2_amd64.deb && rm -f libncurses5_6.3-2_amd64.deb
+          cd /usr/local/src
+          sudo wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
+          sudo tar xvf Python-2.7.18.tgz
+          cd Python-2.7.18
+          sudo ./configure --enable-optimizations
+          sudo make altinstall
+          sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python2
+          sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python
+
+      - name: Install OpenJDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+
+      - name: Syncing TWRP sources
+        run: |
+          mkdir ~/TWRP
+          cd ~/TWRP
+          mkdir ~/.bin
+          curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+          python3 ~/.bin/repo init --depth=1 -u https://github.com/a1000-lineageos/platform_manifest_twrp_omni.git -b twrp-5.1
+          git clone --branch twrp-5.1 --single-branch https://github.com/notnoelchannel2/twrp_device_lenovo_a1000.git ~/TWRP/device/lenovo/a1000
+          python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
+
+      # -----------------------------------------------------------------
+      # Fix 1 + 2 (new step): GNU Make 4.3, the default on ubuntu-22.04,
+      # corrupts absolute paths in the legacy WHOLE_STATIC_LIBRARIES
+      # extraction rule used to build libselinux from libpcre.a. Build
+      # GNU Make 4.2 instead. Its bundled glob.c references glibc-internal
+      # symbols (__alloca, __stat) that modern glibc no longer exports, so
+      # alias them to the public alloca/stat via CFLAGS so it links.
+      #
+      # NOTE: --program-prefix is intentionally omitted here (unlike a
+      # typical guide you might see) — it renames the installed binary to
+      # "twrp-make", which means a later `export PATH=...; make -v` would
+      # silently keep calling the system's make instead of this one.
+      # -----------------------------------------------------------------
+      - name: Build GNU Make 4.2
+        run: |
+          cd ~/TWRP
+          wget https://ftp.gnu.org/gnu/make/make-4.2.tar.gz
+          tar xzf make-4.2.tar.gz && cd make-4.2
+          CFLAGS="-g -O2 -D__alloca=alloca -D__stat=stat" ./configure --prefix=/opt/make42
+          make -j$(nproc --all)
+          sudo make install
+          echo "/opt/make42/bin" >> "$GITHUB_PATH"
+
+      - name: Verify make version
+        run: |
+          make -v
+          make -v | head -1 | grep -q '4\.2'
+
+      - name: Building TWRP
+        run: |
+          cd ~/TWRP
+          source build/envsetup.sh
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export LC_ALL=C
+          # Fix 3: GCC 10+ defaults to -fno-common, which breaks
+          # external/checkpolicy/checkpolicy.h (tentative definition of
+          # `te_assertions` included into multiple translation units ->
+          # "multiple definition" at link time).
+          export HOST_GLOBAL_CFLAGS="-fcommon"
+          export HOST_GLOBAL_CONLYFLAGS="-fcommon"
+          lunch omni_a1000-eng
+          make -j$(nproc --all) recoveryimage
+
+      - name: Uploading TWRP builds
+        uses: actions/upload-artifact@v6
+        with:
+          name: twrp
+          path: /home/runner/TWRP/out/target/product/a1000/recovery.*
