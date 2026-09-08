@@ -77,10 +77,11 @@ jobs:
       - name: Patch checkpolicy.h (te_assertions multiple-definition fix)
         run: |
           cd ~/TWRP/external/checkpolicy
-          sed -n '16p' checkpolicy.h   # sanity check the line before patching
-          sed -i '16s/^te_assertion_t \*te_assertions;/extern te_assertion_t *te_assertions;/' checkpolicy.h
-          # add the single real definition into checkpolicy.c
-          sed -i '0,/^#include/s//te_assertion_t *te_assertions;\n\n#include/' checkpolicy.c
+          sed -n '16p' checkpolicy.h   # confirm before patching
+          sed -i '16s/^te_assert_t \*te_assertions;/extern te_assert_t *te_assertions;/' checkpolicy.h
+          sed -n '16p' checkpolicy.h   # confirm the replacement actually took
+          sed -i '0,/^#include/s//te_assert_t *te_assertions;\n\n#include/' checkpolicy.c
+          sed -n '1,5p' checkpolicy.c  # confirm the definition landed correctly
 
       - name: Building TWRP
         run: |
