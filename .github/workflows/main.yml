@@ -74,6 +74,14 @@ jobs:
           make -v
           make -v | head -1 | grep -q '4\.2'
 
+      - name: Patch checkpolicy.h (te_assertions multiple-definition fix)
+        run: |
+          cd ~/TWRP/external/checkpolicy
+          sed -n '16p' checkpolicy.h   # sanity check the line before patching
+          sed -i '16s/^te_assertion_t \*te_assertions;/extern te_assertion_t *te_assertions;/' checkpolicy.h
+          # add the single real definition into checkpolicy.c
+          sed -i '0,/^#include/s//te_assertion_t *te_assertions;\n\n#include/' checkpolicy.c
+
       - name: Building TWRP
         run: |
           cd ~/TWRP
