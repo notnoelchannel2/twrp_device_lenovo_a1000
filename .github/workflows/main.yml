@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
     - name: Installing JDK 7 + Build Dependencies
       run: |
         sudo dpkg --add-architecture i386
@@ -50,6 +50,8 @@ jobs:
         cd ~/TWRP
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
+        export HOST_GLOBAL_CFLAGS="$HOST_GLOBAL_CFLAGS -fcommon"
+        export HOST_GLOBAL_CONLYFLAGS="$HOST_GLOBAL_CONLYFLAGS -fcommon"
         export LC_ALL=C
         lunch omni_a1000-eng
         make -j$(nproc --all) recoveryimage
