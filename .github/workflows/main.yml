@@ -38,7 +38,7 @@ jobs:
         cd ~/TWRP
         mkdir ~/.bin
         curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-        python3 ~/.bin/repo init --depth=1 -u https://github.com/NotNoelChannel/platform_manifest_twrp_omni.git -b patch-1
+        python3 ~/.bin/repo init --depth=1 -u https://github.com/a1000-lineageos/platform_manifest_twrp_omni.git -b twrp-5.1
         git clone --branch twrp-5.1 --single-branch https://github.com/notnoelchannel2/twrp_device_lenovo_a1000.git ~/TWRP/device/lenovo/a1000
         python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
     - name: Building TWRP
