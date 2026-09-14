@@ -95,6 +95,22 @@ jobs:
             cd ~/TWRP
             git clone --depth 1 --branch main https://github.com/notnoelchannel2/lenovoa1000kernel3.10sourceENHANCED.git kernel/lenovo/a1000
           '
+      - name: Patch bootable/recovery for C++11/14 (old base + new TWRP source skew)
+        run: |
+          docker exec bionic_64 bash -c '
+            set -e
+            cd ~/TWRP
+            # twrp-5.1 manifest pins the Android base to 5.1 but pulls bootable/recovery
+            # from a much newer TeamWin branch. The old bundled clang defaults to a
+            # pre-C++11 dialect, so force the modern std flag onto every module in the
+            # recovery makefile (safe no-op if already present).
+            if [ -f bootable/recovery/Android.mk ]; then
+              sed -i "/include \$(CLEAR_VARS)/a LOCAL_CPPFLAGS += -std=gnu++14" bootable/recovery/Android.mk
+            fi
+            # Some forks split things into subfolders with their own Android.mk; patch those too.
+            find bootable/recovery -maxdepth 2 -name "Android.mk" -exec \
+              sed -i "/include \$(CLEAR_VARS)/a LOCAL_CPPFLAGS += -std=gnu++14" {} \;
+          '
 
       - name: Building TWRP
         run: |
