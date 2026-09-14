@@ -1,105 +1,125 @@
-name: TWRP CI for Lenovo a1000
+name: TWRP 5.1 Build for Lenovo A1000 (Docker/Bionic)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout Code
+        uses: actions/checkout@v7
 
-      - name: Installing JDK 7 + Build Dependencies
+      - name: Free up disk space
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository ppa:deadsnakes/ppa
-          sudo add-apt-repository universe
-          sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex axel g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick protobuf-compiler python3-protobuf lib32readline-dev lib32z1-dev libdw-dev libelf-dev lz4 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
-          wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2_amd64.deb && sudo dpkg -i libtinfo5_6.3-2_amd64.deb && rm -f libtinfo5_6.3-2_amd64.deb
-          wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2_amd64.deb && sudo dpkg -i libncurses5_6.3-2_amd64.deb && rm -f libncurses5_6.3-2_amd64.deb
-          cd /usr/local/src
-          sudo wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
-          sudo tar xvf Python-2.7.18.tgz
-          cd Python-2.7.18
-          sudo ./configure --enable-optimizations
-          sudo make altinstall
-          sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python2
-          sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo docker image prune -af || true
 
-      - name: Install OpenJDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '8'
-
-      - name: Syncing TWRP sources
+      - name: Start Ubuntu 18.04 Container in Background
         run: |
-          mkdir ~/TWRP
-          cd ~/TWRP
-          mkdir ~/.bin
-          curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-          python3 ~/.bin/repo init --depth=1 -u https://github.com/a1000-lineageos/platform_manifest_twrp_omni.git -b twrp-5.1
-          git clone --branch twrp-5.1 --single-branch https://github.com/notnoelchannel2/twrp_device_lenovo_a1000.git ~/TWRP/device/lenovo/a1000
-          python3 ~/.bin/repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
+          docker run -d --name bionic_64 --privileged \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ubuntu:18.04 tail -f /dev/null
 
-      # -----------------------------------------------------------------
-      # Fix 1 + 2 (new step): GNU Make 4.3, the default on ubuntu-22.04,
-      # corrupts absolute paths in the legacy WHOLE_STATIC_LIBRARIES
-      # extraction rule used to build libselinux from libpcre.a. Build
-      # GNU Make 4.2 instead. Its bundled glob.c references glibc-internal
-      # symbols (__alloca, __stat) that modern glibc no longer exports, so
-      # alias them to the public alloca/stat via CFLAGS so it links.
-      #
-      # NOTE: --program-prefix is intentionally omitted here (unlike a
-      # typical guide you might see) — it renames the installed binary to
-      # "twrp-make", which means a later `export PATH=...; make -v` would
-      # silently keep calling the system's make instead of this one.
-      # -----------------------------------------------------------------
-      - name: Build GNU Make 4.2
+      - name: Prepare Container Repositories
         run: |
-          cd ~/TWRP
-          wget https://ftp.gnu.org/gnu/make/make-4.2.tar.gz
-          tar xzf make-4.2.tar.gz && cd make-4.2
-          CFLAGS="-g -O2 -D__alloca=alloca -D__stat=stat" ./configure --prefix=/opt/make42
-          make -j$(nproc --all)
-          sudo make install
-          echo "/opt/make42/bin" >> "$GITHUB_PATH"
+          docker exec bionic_64 rm -rf /etc/apt/sources.list.d/*
+          docker exec bionic_64 rm -rf /var/lib/apt/lists/*
+          docker exec -i bionic_64 bash -c "cat << 'EOF' > /etc/apt/sources.list
+          deb http://archive.ubuntu.com/ubuntu/ bionic main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu/ bionic-updates main restricted universe multiverse
+          deb http://security.ubuntu.com/ubuntu/ bionic-security main restricted universe multiverse
+          EOF"
+          # If bionic ever gets pulled from the normal archive, fall back to old-releases:
+          # deb http://old-releases.ubuntu.com/ubuntu/ bionic main restricted universe multiverse
+          docker exec bionic_64 apt-get clean
+          docker exec bionic_64 apt-get update -o Acquire::Check-Valid-Until=false
 
-      - name: Verify make version
+      - name: Install Build Dependencies
         run: |
-          make -v
-          make -v | head -1 | grep -q '4\.2'
+          docker exec bionic_64 bash -c '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            dpkg --add-architecture i386
+            apt-get update -o Acquire::Check-Valid-Until=false
+            apt-get install -y software-properties-common
+            add-apt-repository -y universe
+            apt-get update -o Acquire::Check-Valid-Until=false
+            apt-get install -y \
+              bc bison build-essential ccache curl flex axel \
+              g++-multilib gcc-multilib git git-lfs gnupg gperf \
+              imagemagick lib32readline-dev lib32z1-dev libdw-dev \
+              libelf-dev lz4 libsdl1.2-dev libssl-dev libxml2 \
+              libxml2-utils lzop pngcrush rsync schedtool \
+              squashfs-tools xsltproc zip zlib1g-dev \
+              libncurses5 libncurses5-dev libtinfo5 \
+              python python3 python3-pip openjdk-8-jdk unzip wget
+            ln -sf /usr/bin/python3 /usr/bin/python3.x 2>/dev/null || true
+          '
 
-      - name: Patch checkpolicy.h (te_assertions multiple-definition fix)
+      - name: Install repo tool
         run: |
-          cd ~/TWRP/external/checkpolicy
-          sed -n '16p' checkpolicy.h   # sanity check before patching
-          sed -i '16s/^te_assert_t \*te_assertions;/extern te_assert_t *te_assertions;/' checkpolicy.h
-          sed -n '16p' checkpolicy.h   # confirm it now says "extern"
-          sed -i '0,/^#include/s//te_assert_t *te_assertions;\n\n#include/' checkpolicy.c
-          sed -n '55,65p' checkpolicy.c   # confirm the definition landed correctly
+          docker exec bionic_64 bash -c '
+            set -e
+            mkdir -p ~/.bin
+            curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+            chmod a+x ~/.bin/repo
+            git config --global user.email "ci@example.com"
+            git config --global user.name "TWRP CI"
+            git config --global color.ui false
+            git config --global --add safe.directory "*"
+          '
+
+      - name: Sync TWRP Sources (twrp-5.1)
+        run: |
+          docker exec bionic_64 bash -c '
+            set -e
+            export PATH=~/.bin:$PATH
+            mkdir -p ~/TWRP
+            cd ~/TWRP
+            repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-5.1
+            git clone --depth 1 --branch twrp-5.1 --single-branch \
+              https://github.com/notnoelchannel2/twrp_device_lenovo_a1000.git \
+              device/lenovo/a1000
+            repo sync -c --force-sync --optimized-fetch --no-tags --no-clone-bundle --prune -j$(nproc --all)
+          '
+
+      - name: Clone Kernel
+        run: |
+          docker exec bionic_64 bash -c '
+            set -e
+            cd ~/TWRP
+            git clone --depth 1 --branch main https://github.com/notnoelchannel2/lenovoa1000kernel3.10sourceENHANCED.git kernel/lenovo/a1000
+          '
 
       - name: Building TWRP
         run: |
-          cd ~/TWRP
-          source build/envsetup.sh
-          export ALLOW_MISSING_DEPENDENCIES=true
-          export LC_ALL=C
-          # Fix 3: GCC 10+ defaults to -fno-common, which breaks
-          # external/checkpolicy/checkpolicy.h (tentative definition of
-          # `te_assertions` included into multiple translation units ->
-          # "multiple definition" at link time).
-          export HOST_GLOBAL_CFLAGS="-fcommon"
-          export HOST_GLOBAL_CONLYFLAGS="-fcommon"
-          lunch omni_a1000-eng
-          make -j$(nproc --all) recoveryimage
+          docker exec bionic_64 bash -c '
+            set -e
+            export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            cd ~/TWRP
+            source build/envsetup.sh
+            export ALLOW_MISSING_DEPENDENCIES=true
+            export LC_ALL=C
+            lunch omni_a1000-eng
+            make -j$(nproc --all) recoveryimage
+          '
+
+      - name: Copy Output Out of Container
+        if: success()
+        run: |
+          mkdir -p out
+          docker cp bionic_64:/root/TWRP/out/target/product/a1000/. out/ || \
+          docker cp bionic_64:/root/TWRP/out/target/product/a1000/recovery.img out/ || \
 
       - name: Uploading TWRP builds
         uses: actions/upload-artifact@v6
         with:
-          name: twrp
-          path: /home/runner/TWRP/out/target/product/a1000/recovery.*
+          name: twrp-a1000
+          path: out/*
+          if-no-files-found: warn
