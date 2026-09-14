@@ -103,7 +103,7 @@ jobs:
             export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
             export PATH=$JAVA_HOME/bin:$PATH
             cd ~/TWRP
-            sed -i 's/if (sml != nullptr)/if (sml != NULL)/g' bootable/recovery/partition.cpp
+            sed -i "s/if (sml != nullptr)/if (sml != NULL)/g" bootable/recovery/partition.cpp
             source build/envsetup.sh
             export ALLOW_MISSING_DEPENDENCIES=true
             export LC_ALL=C
