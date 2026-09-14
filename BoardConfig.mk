@@ -62,7 +62,6 @@ TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/brightness
 TARGET_RECOVERY_FSTAB := device/lenovo/a1000/twrp.fstab
 TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone1/temp
 TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
-TW_SINGLE_BUFFER := true
 TW_EXCLUDE_SUPERSU := true
 TW_EXCLUDE_TWRPAPP := true
 TW_NO_EXFAT_FUSE := true
