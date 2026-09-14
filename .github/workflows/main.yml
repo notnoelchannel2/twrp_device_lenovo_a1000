@@ -103,6 +103,8 @@ jobs:
             export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
             export PATH=$JAVA_HOME/bin:$PATH
             cd ~/TWRP
+            rm -rf bootable/recovery
+            git clone https://github.com/a1000-los/android_bootable_recovery -b android-9.0 bootable/recovery
             sed -i "s/if (sml != nullptr)/if (sml != NULL)/g" bootable/recovery/partition.cpp
             source build/envsetup.sh
             export ALLOW_MISSING_DEPENDENCIES=true
