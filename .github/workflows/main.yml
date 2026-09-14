@@ -115,8 +115,8 @@ jobs:
         if: success()
         run: |
           mkdir -p out
-          docker cp bionic_64:/root/TWRP/out/target/product/a1000/. out/ || \
           docker cp bionic_64:/root/TWRP/out/target/product/a1000/recovery.img out/ || \
+          docker cp bionic_64:/root/TWRP/out/target/product/a1000/. out/ || true
 
       - name: Uploading TWRP builds
         uses: actions/upload-artifact@v6
