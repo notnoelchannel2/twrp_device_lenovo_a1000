@@ -62,9 +62,7 @@ TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/brightness
 TARGET_RECOVERY_FSTAB := device/lenovo/a1000/twrp.fstab
 TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone1/temp
 TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
-BOARD_RECOVERY_NEEDS_FBIOPAN_DISPLAY := true
 TW_FBIOPAN := true
-TW_INCLUDE_CRYPTO := true
 TW_EXCLUDE_SUPERSU := true
 TW_EXCLUDE_TWRPAPP := true
 TW_NO_EXFAT_FUSE := true
@@ -78,3 +76,6 @@ BOARD_USE_CUSTOM_RECOVERY_FONT := \"roboto_10x18.h\"
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
 TW_MTP_DEVICE := /dev/mtp_usb
 TARGET_USE_CUSTOM_LUN_FILE_PATH := "/sys/devices/20200000.usb/gadget/lun%d/file"
+
+# recovery -> libtwadbbu -> libtwrpdigest -> libcrypto
+TARGET_RECOVERY_DEVICE_MODULES += libcrypto
